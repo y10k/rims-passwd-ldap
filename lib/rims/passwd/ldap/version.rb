@@ -1,7 +1,10 @@
-module Rims
-  module Passwd
-    module Ldap
-      VERSION = "0.0.1"
-    end
-  end
+#-*-  coding: utf-8 -*-
+
+module RIMS
+  Password_LDAPSource_VERSION = '0.0.1'
 end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:

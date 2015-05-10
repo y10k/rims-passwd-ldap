@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-require "rims/passwd/ldap/version"
+require 'net/ldap'
+require 'rims'
+require 'rims/passwd/ldap/version'
 
-module Rims
-  module Passwd
-    module Ldap
+module RIMS
+  module Password
+    class LDAPSource < Source
       # Your code goes here...
     end
   end

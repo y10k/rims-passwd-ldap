@@ -6,7 +6,7 @@ require 'rims/passwd/ldap/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "rims-passwd-ldap"
-  spec.version       = Rims::Passwd::Ldap::VERSION
+  spec.version       = RIMS::Password_LDAPSource_VERSION
   spec.authors       = ["TOKI Yoshinori"]
   spec.email         = ["toki@freedom.ne.jp"]
   spec.summary       = %q{RIMS password source plug-in for LDAP authentication.}
@@ -19,6 +19,8 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
+  spec.add_runtime_dependency "rims"
+  spec.add_runtime_dependency "net-ldap"
   spec.add_development_dependency "bundler", "~> 1.7"
   spec.add_development_dependency "rake", "~> 10.0"
 end
