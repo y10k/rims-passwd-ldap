@@ -1,0 +1,48 @@
+# -*- coding: utf-8 -*-
+
+DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
+
+IMAGE_REPOSITORY = 'toki/rims-slapd'
+IMAGE_TAG = 'v1.4'
+
+NAME = ENV['NAME'] || 'rims-slapd'
+PORT = 38900
+
+def docker(*args)
+  sh DOCKER_CMD, *args
+end
+
+desc 'build image'
+task :build do
+  docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
+end
+
+desc 'remove image'
+task :rmi do
+  docker 'rmi', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+end
+
+desc 'run new container'
+task :run do
+  docker 'run', "--name=#{NAME}", '-itd', '-p', "#{PORT}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+end
+
+desc 'start container'
+task :start do
+  docker 'start', NAME
+end
+
+desc 'stop container'
+task :stop do
+  docker 'stop', NAME
+end
+
+desc 'remove container'
+task :rm do
+  docker 'rm', NAME
+end
+
+# Local Variables:
+# mode: Ruby
+# indent-tabs-mode: nil
+# End:
