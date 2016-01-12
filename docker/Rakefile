@@ -14,6 +14,12 @@ def docker(*args)
   sh DOCKER_CMD, *args
 end
 
+desc 'all setup'
+task :setup => [ :build, :run ]
+
+desc 'all destroy'
+task :destroy => [ :stop, :rm, :rmi ]
+
 desc 'build image'
 task :build do
   docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
