@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+require 'net/ldap'
+require 'pp'
 require 'yaml'
 
 DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
@@ -48,6 +50,25 @@ end
 desc 'remove container'
 task :rm do
   docker 'rm', NAME
+end
+
+def ldap_open
+  Net::LDAP.open(host: 'localhost',
+                 port: AUTH['port'],
+                 auth: {
+                   method: :simple,
+                   username: 'cn=admin,dc=nodomain',
+                   password: AUTH['pass']
+                 }) {|ldap|
+    yield(ldap)
+  }
+end
+
+desc 'dump dit'
+task :dump_dit do
+  ldap_open{|ldap|
+    pp ldap.search(base: 'dc=nodomain')
+  }
 end
 
 # Local Variables:
