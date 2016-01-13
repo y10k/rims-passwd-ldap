@@ -52,6 +52,10 @@ task :rm do
   docker 'rm', NAME
 end
 
+def load_users
+  YAML.load_file(File.join(File.dirname(__FILE__), 'users.yml'))
+end
+
 def ldap_open
   Net::LDAP.open(host: 'localhost',
                  port: AUTH['port'],
@@ -68,6 +72,44 @@ desc 'dump dit'
 task :dump_dit do
   ldap_open{|ldap|
     pp ldap.search(base: 'dc=nodomain')
+  }
+end
+
+task :add_example_dit do
+  ldap_open{|ldap|
+    ldap.add(dn: 'o=science,dc=nodomain',
+             attributes: {
+               o: 'sicence',
+               objectclass: 'organization'
+             })
+    ldap.add(dn: 'ou=user,o=science,dc=nodomain',
+             attributes: {
+               ou: 'user',
+               objectclass: 'organizationalUnit'
+             })
+    ldap.add(dn: 'ou=group,o=science,dc=nodomain',
+             attributes: {
+               ou: 'group',
+               objectclass: 'organizationalUnit'
+             })
+
+    users = load_users
+    for u in users
+      attrs = {}
+      for name, value in u
+        case (name)
+        when 'userPassword'
+          attrs[:userPassword] = Net::LDAP::Password.generate(:ssha, value)
+        when 'group'
+          # skip
+        else
+          attrs[name.to_sym] = value
+        end
+      end
+      attrs[:objectclass] = 'inetOrgPerson'
+      ldap.add(dn: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
+               attributes: attrs)
+    end
   }
 end
 
