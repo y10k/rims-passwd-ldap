@@ -22,6 +22,9 @@ task :setup => [ :build, :run ]
 desc 'all destroy'
 task :destroy => [ :stop, :rm, :rmi ]
 
+desc 'reset running container'
+task :reset => [ :stop, :rm, :run ]
+
 desc 'build image'
 task :build do
   docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
