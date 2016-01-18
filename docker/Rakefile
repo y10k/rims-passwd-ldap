@@ -59,16 +59,25 @@ def load_users
   YAML.load_file(File.join(File.dirname(__FILE__), 'users.yml'))
 end
 
-def ldap_open
-  Net::LDAP.open(host: 'localhost',
-                 port: AUTH['port'],
-                 auth: {
-                   method: :simple,
-                   username: 'cn=admin,dc=nodomain',
-                   password: AUTH['pass']
-                 }) {|ldap|
+def ldap_anon
+  Net::LDAP.open(host: 'localhost', port: AUTH['port']) {|ldap|
     yield(ldap)
   }
+end
+
+def ldap_open
+  ldap_anon{|ldap|
+    unless (ldap.bind(method: :simple, username: 'cn=admin,dc=nodomain', password: AUTH['pass'])) then
+      p ldap.get_operation_result
+      raise 'failed to bind.'
+    end
+    yield(ldap)
+  }
+end
+
+def ldap_error(ldap)
+  pp ldap.get_operation_result
+  raise 'ldap fail.'
 end
 
 desc 'dump dit'
@@ -84,17 +93,17 @@ task :add_example_dit do
              attributes: {
                o: 'sicence',
                objectclass: 'organization'
-             })
+             }) or ldap_error(ldap)
     ldap.add(dn: 'ou=user,o=science,dc=nodomain',
              attributes: {
                ou: 'user',
                objectclass: 'organizationalUnit'
-             })
+             }) or ldap_error(ldap)
     ldap.add(dn: 'ou=group,o=science,dc=nodomain',
              attributes: {
                ou: 'group',
                objectclass: 'organizationalUnit'
-             })
+             }) or ldap_error(ldap)
 
     users = load_users
     for u in users
@@ -111,7 +120,18 @@ task :add_example_dit do
       end
       attrs[:objectclass] = 'inetOrgPerson'
       ldap.add(dn: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
-               attributes: attrs)
+               attributes: attrs) or ldap_error(ldap)
+    end
+  }
+end
+
+task :test_user_auth do
+  ldap_anon{|ldap|
+    users = load_users
+    for u in users
+      ldap.bind(method: :simple,
+                username: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
+                password: u['userPassword']) or ldap_error(ldap)
     end
   }
 end
