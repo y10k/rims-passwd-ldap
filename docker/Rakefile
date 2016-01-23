@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-require 'net/ldap'
 require 'pp'
 require 'yaml'
 
@@ -16,60 +15,12 @@ def docker(*args)
   sh DOCKER_CMD, *args
 end
 
-desc 'all setup'
-task :setup => [ :build, :run ]
-
-desc 'all destroy'
-task :destroy => [ :stop, :rm, :rmi ]
-
-desc 'reset running container'
-task :reset => [ :stop, :rm, :run ]
-
-desc 'build image'
-task :build do
-  docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
-end
-
-desc 'remove image'
-task :rmi do
-  docker 'rmi', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
-end
-
-desc 'run new container'
-task :run do
-  docker 'run', "--name=#{NAME}", '-itd', '-p', "#{AUTH['port']}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
-end
-
-desc 'start container'
-task :start do
-  docker 'start', NAME
-end
-
-desc 'stop container'
-task :stop do
-  docker 'stop', NAME
-end
-
-desc 'remove container'
-task :rm do
-  docker 'rm', NAME
-end
-
-desc 'show slapd configuration'
-task :conf do
-  docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
-end
-
-desc 'tail slapd logging'
-task :tail do
-  docker 'exec',  NAME, 'tail', '-100f', '/var/log/syslog'
-end
-
 def load_users
   YAML.load_file(File.join(File.dirname(__FILE__), 'users.yml'))
 end
 
 def ldap_anon
+  require 'net/ldap'            # on-demand load
   Net::LDAP.open(host: 'localhost', port: AUTH['port']) {|ldap|
     yield(ldap)
   }
@@ -90,84 +41,141 @@ def ldap_error(ldap)
   raise 'ldap fail.'
 end
 
-desc 'dump dit'
-task :dump_dit do
-  ldap_open{|ldap|
-    puts '* all'
-    pp ldap.search(base: 'dc=nodomain')
+namespace :docker do
+  desc 'all setup'
+  task :setup => [ :build, :run ]
 
-    phys_filter = Net::LDAP::Filter.eq('memberOf', 'cn=physics,ou=group,o=science,dc=nodomain')
-    math_filter = Net::LDAP::Filter.eq('memberOf', 'cn=mathematics,ou=group,o=science,dc=nodomain')
+  desc 'all destroy'
+  task :destroy => [ :stop, :rm, :rmi ]
 
-    for f in [ phys_filter, math_filter ]
-      puts "* filter: #{f}"
-      pp ldap.search(base: 'o=science,dc=nodomain', attributes: %w[ dn ], filter: f)
-    end
-  }
+  desc 'reset running container'
+  task :reset => [ :stop, :rm, :run ]
+
+  desc 'build image'
+  task :build do
+    docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
+  end
+
+  desc 'remove image'
+  task :rmi do
+    docker 'rmi', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+  end
+
+  desc 'run new container'
+  task :run do
+    docker 'run', "--name=#{NAME}", '-itd', '-p', "#{AUTH['port']}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+  end
+
+  desc 'start container'
+  task :start do
+    docker 'start', NAME
+  end
+
+  desc 'stop container'
+  task :stop do
+    docker 'stop', NAME
+  end
+
+  desc 'remove container'
+  task :rm do
+    docker 'rm', NAME
+  end
+
+  desc 'show slapd configuration'
+  task :conf do
+    docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
+  end
+
+  desc 'tail slapd logging'
+  task :tail do
+    docker 'exec',  NAME, 'tail', '-100f', '/var/log/syslog'
+  end
 end
 
-task :add_example_dit do
-  ldap_open{|ldap|
-    ldap.add(dn: 'o=science,dc=nodomain',
-             attributes: {
-               o: 'sicence',
-               objectclass: 'organization'
-             }) or ldap_error(ldap)
-    ldap.add(dn: 'ou=user,o=science,dc=nodomain',
-             attributes: {
-               ou: 'user',
-               objectclass: 'organizationalUnit'
-             }) or ldap_error(ldap)
-    ldap.add(dn: 'ou=group,o=science,dc=nodomain',
-             attributes: {
-               ou: 'group',
-               objectclass: 'organizationalUnit'
-             }) or ldap_error(ldap)
+namespace :ldap do
+  desc 'dump example dit'
+  task :dump do
+    ldap_open{|ldap|
+      puts '* all'
+      pp ldap.search(base: 'dc=nodomain')
 
-    users = load_users
-    for u in users
-      attrs = {}
-      for name, value in u
-        case (name)
-        when 'userPassword'
-          attrs[:userPassword] = Net::LDAP::Password.generate(:ssha, value)
-        when 'group'
-          # skip
-        else
-          attrs[name.to_sym] = value
-        end
+      phys_filter = Net::LDAP::Filter.eq('memberOf', 'cn=physics,ou=group,o=science,dc=nodomain')
+      math_filter = Net::LDAP::Filter.eq('memberOf', 'cn=mathematics,ou=group,o=science,dc=nodomain')
+
+      for f in [ phys_filter, math_filter ]
+        puts "* filter: #{f}"
+        pp ldap.search(base: 'o=science,dc=nodomain', attributes: %w[ dn ], filter: f)
       end
-      attrs[:objectclass] = 'inetOrgPerson'
-      ldap.add(dn: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
-               attributes: attrs) or ldap_error(ldap)
-    end
+    }
+  end
 
-    groups = {}
-    for u in users
-      groups[u['group']] = [] unless (groups.key? u['group'])
-      groups[u['group']] << u['uid']
-    end
-
-    for name, members in groups
-      ldap.add(dn: "cn=#{name},ou=group,o=science,dc=nodomain",
+  desc 'build exmaple dit'
+  task :build do
+    ldap_open{|ldap|
+      ldap.add(dn: 'o=science,dc=nodomain',
                attributes: {
-                 cn: name,
-                 objectclass: 'groupOfNames',
-                 member: members.map{|uid| "uid=#{uid},ou=user,o=science,dc=nodomain" }
+                 o: 'sicence',
+                 objectclass: 'organization'
                }) or ldap_error(ldap)
-    end
-  }
-end
+      ldap.add(dn: 'ou=user,o=science,dc=nodomain',
+               attributes: {
+                 ou: 'user',
+                 objectclass: 'organizationalUnit'
+               }) or ldap_error(ldap)
+      ldap.add(dn: 'ou=group,o=science,dc=nodomain',
+               attributes: {
+                 ou: 'group',
+                 objectclass: 'organizationalUnit'
+               }) or ldap_error(ldap)
 
-task :test_user_auth do
-  ldap_anon{|ldap|
-    users = load_users
-    for u in users
-      ldap.bind(method: :simple,
-                username: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
-                password: u['userPassword']) or ldap_error(ldap)
-    end
-  }
+      users = load_users
+      for u in users
+        attrs = {}
+        for name, value in u
+          case (name)
+          when 'userPassword'
+            attrs[:userPassword] = Net::LDAP::Password.generate(:ssha, value)
+          when 'group'
+            # skip
+          else
+            attrs[name.to_sym] = value
+          end
+        end
+        attrs[:objectclass] = 'inetOrgPerson'
+        ldap.add(dn: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
+                 attributes: attrs) or ldap_error(ldap)
+      end
+
+      groups = {}
+      for u in users
+        groups[u['group']] = [] unless (groups.key? u['group'])
+        groups[u['group']] << u['uid']
+      end
+
+      for name, members in groups
+        ldap.add(dn: "cn=#{name},ou=group,o=science,dc=nodomain",
+                 attributes: {
+                   cn: name,
+                   objectclass: 'groupOfNames',
+                   member: members.map{|uid| "uid=#{uid},ou=user,o=science,dc=nodomain" }
+                 }) or ldap_error(ldap)
+      end
+    }
+  end
+
+  desc 'some tests'
+  task :test => [ :test_user_auth ]
+
+  task :test_user_auth do
+    ldap_anon{|ldap|
+      users = load_users
+      for u in users
+        ldap.bind(method: :simple,
+                  username: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
+                  password: u['userPassword']) or ldap_error(ldap)
+      end
+    }
+  end
 end
 
 # Local Variables:
