@@ -1,0 +1,16 @@
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: 8 32 64 128 256
+
+dn: cn=module{0},cn=config
+changetype: modify
+add: olcModuleLoad
+olcModuleLoad: memberof
+
+dn: olcOverlay=memberof,olcDatabase={1}hdb,cn=config
+changetype: add
+objectClass: olcMemberOf
+objectClass: olcOverlayConfig
+objectClass: olcConfig
+objectClass: top

@@ -8,4 +8,6 @@ RUN awk '/^pass:/{print "slapd","slapd/password1","password",$2}' auth.yml | deb
 RUN awk '/^pass:/{print "slapd","slapd/password2","password",$2}' auth.yml | debconf-set-selections
 RUN apt-get -y install slapd
 RUN apt-get -y install ldap-utils
-CMD service slapd start && bash
+ADD modconf.ldif modconf.ldif
+RUN service slapd start && ldapmodify -Y EXTERNAL -H ldapi:/// -f modconf.ldif && service slapd stop
+CMD service rsyslog start && service slapd start && bash
