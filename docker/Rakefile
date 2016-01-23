@@ -55,6 +55,16 @@ task :rm do
   docker 'rm', NAME
 end
 
+desc 'show slapd configuration'
+task :conf do
+  docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
+end
+
+desc 'tail slapd logging'
+task :tail do
+  docker 'exec',  NAME, 'tail', '-100f', '/var/log/syslog'
+end
+
 def load_users
   YAML.load_file(File.join(File.dirname(__FILE__), 'users.yml'))
 end
