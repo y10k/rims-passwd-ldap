@@ -1,40 +1,44 @@
-- uid: einstein
-  userPassword: cdb1a742-398f-4717-9fcd-fd700f734854
-  cn: Albert
-  sn: Einstein
-  group: physics
-- uid: feynman
-  userPassword: 0ee33778-9b59-4983-a684-99d7e38c91e1
-  cn: Richard
-  sn: Feynman
-  group: physics
-- uid: landau
-  userPassword: 35c40788-62c4-4b35-ba10-df737fabea99
-  cn: Lev
-  sn: Landau
-  group: physics
-- uid: hawking
-  userPassword: b745ad68-dc3c-4b51-a730-590fb8f659f6
-  cn: Stephen
-  sn: Hawking
-  group: physics
-- uid: galileo
-  userPassword: aad39384-8888-46cd-825b-a2b4f2713a12
-  cn: Galileo
-  sn: Galilei
-  group: physics
-- uid: galois
-  userPassword: d4af8bc9-fac8-4242-b7ac-42efefb253b9
-  cn: Evariste
-  sn: Galois
-  group: mathematics
-- uid: euler
-  userPassword: 2291ffeb-b1cd-478c-9625-ebd2746595f4
-  cn: Leonhard
-  sn: Euler
-  group: mathematics
-- uid: gauss
-  userPassword: 3f5c5559-b262-4c51-88ae-60e7c3022a36
-  cn: Fridericus
-  sn: Gauss
-  group: mathematics
+support:
+    - cn: search
+      userPassword: 4586d51f-2161-4fb2-a20a-9e03eaeba1e0
+user:
+    - uid: einstein
+      userPassword: cdb1a742-398f-4717-9fcd-fd700f734854
+      cn: Albert
+      sn: Einstein
+      group: physics
+    - uid: feynman
+      userPassword: 0ee33778-9b59-4983-a684-99d7e38c91e1
+      cn: Richard
+      sn: Feynman
+      group: physics
+    - uid: landau
+      userPassword: 35c40788-62c4-4b35-ba10-df737fabea99
+      cn: Lev
+      sn: Landau
+      group: physics
+    - uid: hawking
+      userPassword: b745ad68-dc3c-4b51-a730-590fb8f659f6
+      cn: Stephen
+      sn: Hawking
+      group: physics
+    - uid: galileo
+      userPassword: aad39384-8888-46cd-825b-a2b4f2713a12
+      cn: Galileo
+      sn: Galilei
+      group: physics
+    - uid: galois
+      userPassword: d4af8bc9-fac8-4242-b7ac-42efefb253b9
+      cn: Evariste
+      sn: Galois
+      group: mathematics
+    - uid: euler
+      userPassword: 2291ffeb-b1cd-478c-9625-ebd2746595f4
+      cn: Leonhard
+      sn: Euler
+      group: mathematics
+    - uid: gauss
+      userPassword: 3f5c5559-b262-4c51-88ae-60e7c3022a36
+      cn: Fridericus
+      sn: Gauss
+      group: mathematics

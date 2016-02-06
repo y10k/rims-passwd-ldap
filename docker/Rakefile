@@ -120,24 +120,41 @@ namespace :ldap do
     ldap_open{|ldap|
       ldap.add(dn: 'o=science,dc=nodomain',
                attributes: {
-                 o: 'sicence',
                  objectclass: 'organization'
+               }) or ldap_error(ldap)
+      ldap.add(dn: 'ou=support,o=science,dc=nodomain',
+               attributes: {
+                 objectclass: 'organizationalUnit'
                }) or ldap_error(ldap)
       ldap.add(dn: 'ou=user,o=science,dc=nodomain',
                attributes: {
-                 ou: 'user',
                  objectclass: 'organizationalUnit'
                }) or ldap_error(ldap)
       ldap.add(dn: 'ou=group,o=science,dc=nodomain',
                attributes: {
-                 ou: 'group',
                  objectclass: 'organizationalUnit'
                }) or ldap_error(ldap)
 
       users = load_users
-      for u in users
+
+      for role in users['support']
         attrs = {}
-        for name, value in u
+        for name, value in role
+          case (name)
+          when 'userPassword'
+            attrs[:userPassword] = Net::LDAP::Password.generate(:ssha, value)
+          else
+            attrs[name.to_sym] = value
+          end
+        end
+        attrs[:objectClass] = %w[ organizationalRole simpleSecurityObject ]
+        ldap.add(dn: "cn=#{role['cn']},ou=support,o=science,dc=nodomain",
+                 attributes: attrs) or ldap_error(ldap)
+      end
+
+      for user in users['user']
+        attrs = {}
+        for name, value in user
           case (name)
           when 'userPassword'
             attrs[:userPassword] = Net::LDAP::Password.generate(:ssha, value)
@@ -148,14 +165,14 @@ namespace :ldap do
           end
         end
         attrs[:objectclass] = 'inetOrgPerson'
-        ldap.add(dn: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
+        ldap.add(dn: "uid=#{user['uid']},ou=user,o=science,dc=nodomain",
                  attributes: attrs) or ldap_error(ldap)
       end
 
       groups = {}
-      for u in users
-        groups[u['group']] = [] unless (groups.key? u['group'])
-        groups[u['group']] << u['uid']
+      for user in users['user']
+        groups[user['group']] = [] unless (groups.key? user['group'])
+        groups[user['group']] << user['uid']
       end
 
       for name, members in groups
@@ -175,10 +192,15 @@ namespace :ldap do
   task :test_user_auth do
     ldap_anon{|ldap|
       users = load_users
-      for u in users
+      for role in users['support']
         ldap.bind(method: :simple,
-                  username: "uid=#{u['uid']},ou=user,o=science,dc=nodomain",
-                  password: u['userPassword']) or ldap_error(ldap)
+                  username: "cn=#{role['cn']},ou=support,o=science,dc=nodomain",
+                  password: role['userPassword']) or ldap_error(ldap)
+      end
+      for user in users['user']
+        ldap.bind(method: :simple,
+                  username: "uid=#{user['uid']},ou=user,o=science,dc=nodomain",
+                  password: user['userPassword']) or ldap_error(ldap)
       end
     }
   end
