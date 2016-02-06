@@ -41,6 +41,12 @@ def ldap_error(ldap)
   raise 'ldap fail.'
 end
 
+task :wait do
+  s = 10
+  puts "...wait #{s}s..."
+  sleep(s)
+end
+
 namespace :docker do
   desc 'all setup'
   task :setup => [ :build, :run ]
