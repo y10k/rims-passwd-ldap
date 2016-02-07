@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 
 require 'pp'
+require 'test/unit/assertions'
 require 'yaml'
+
+include Test::Unit::Assertions
 
 DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
 
@@ -26,9 +29,9 @@ def ldap_anon
   }
 end
 
-def ldap_open
+def ldap_open(username='cn=admin,dc=nodomain', password=AUTH['pass'], method=:simple)
   ldap_anon{|ldap|
-    unless (ldap.bind(method: :simple, username: 'cn=admin,dc=nodomain', password: AUTH['pass'])) then
+    unless (ldap.bind(method: method, username: username, password: password)) then
       p ldap.get_operation_result
       raise 'failed to bind.'
     end
@@ -87,6 +90,11 @@ namespace :docker do
     docker 'rm', NAME
   end
 
+  desc 'setup slapd ACL'
+  task :acl do
+    sh "#{DOCKER_CMD} exec -i #{NAME} ldapmodify -Y EXTERNAL -H ldapi:/// <acl.ldif"
+  end
+
   desc 'show slapd configuration'
   task :conf do
     docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
@@ -111,6 +119,28 @@ namespace :ldap do
       for f in [ phys_filter, math_filter ]
         puts "* filter: #{f}"
         pp ldap.search(base: 'o=science,dc=nodomain', attributes: %w[ dn ], filter: f)
+      end
+    }
+  end
+
+  desc 'search dit'
+  task :search do
+    users = load_users
+    search = users['support'].find{|role| role['cn'] = 'search' }
+    search_dn = "cn=#{search['cn']},ou=support,o=science,dc=nodomain"
+    ldap_open(search_dn, search['userPassword']) {|ldap|
+      puts '* all'
+      pp ldap.search(base: 'dc=nodomain')
+
+      puts '* self'
+      pp ldap.search(base: search_dn)
+
+      phys_filter = Net::LDAP::Filter.eq('memberOf', 'cn=physics,ou=group,o=science,dc=nodomain')
+      math_filter = Net::LDAP::Filter.eq('memberOf', 'cn=mathematics,ou=group,o=science,dc=nodomain')
+
+      for f in [ phys_filter, math_filter ]
+        puts "* filter: #{f}"
+        pp ldap.search(base: 'ou=user,o=science,dc=nodomain', filter: f)
       end
     }
   end
@@ -187,7 +217,7 @@ namespace :ldap do
   end
 
   desc 'some tests'
-  task :test => [ :test_user_auth ]
+  task :test => [ :test_user_auth, :test_search_acl ]
 
   task :test_user_auth do
     ldap_anon{|ldap|
@@ -201,6 +231,38 @@ namespace :ldap do
         ldap.bind(method: :simple,
                   username: "uid=#{user['uid']},ou=user,o=science,dc=nodomain",
                   password: user['userPassword']) or ldap_error(ldap)
+      end
+    }
+  end
+
+  task :test_search_acl do
+    users = load_users
+    search = users['support'].find{|role| role['cn'] = 'search' }
+    search_dn = "cn=#{search['cn']},ou=support,o=science,dc=nodomain"
+    ldap_open(search_dn, search['userPassword']) {|ldap|
+      assert_nil(ldap.search(base: 'dc=nodomain'))
+      assert_nil(ldap.search(base: 'o=science,dc=nodomain'))
+      assert_nil(ldap.search(base: 'ou=support,o=science,dc=nodomain'))
+      assert_nil(ldap.search(base: search_dn))
+
+      assert(entry_list = ldap.search(base: 'ou=user,o=science,dc=nodomain',
+                                      scope: Net::LDAP::SearchScope_BaseObject))
+      assert(ou = entry_list.shift)
+      assert_equal(%w[ organizationalUnit ], ou[:objectClass])
+      assert_equal(%w[ user ], ou[:ou])
+      assert_equal([], ou[:userPassword])
+      assert_nil(entry_list.shift)
+
+      assert(entry_list = ldap.search(base: 'ou=user,o=science,dc=nodomain',
+                                      scope: Net::LDAP::SearchScope_WholeSubtree,
+                                      filter: Net::LDAP::Filter.eq('objectClass', 'inetOrgPerson')))
+      assert_equal(users['user'].length, entry_list.length)
+      for person in entry_list
+        assert_equal(%w[ inetOrgPerson ], person[:objectClass])
+        for uid in person[:uid]
+          assert(users['user'].find{|user| user['uid'] == uid })
+        end
+        assert_equal([], person[:userPassword])
       end
     }
   end
