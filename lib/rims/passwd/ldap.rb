@@ -4,12 +4,8 @@ require 'net/ldap'
 require 'rims'
 require 'rims/passwd/ldap/version'
 
-module RIMS
-  module Password
-    class LDAPSource < Source
-      # Your code goes here...
-    end
-  end
+class RIMS::Password::LDAPSource < RIMS::Password::Source
+  # Your code goes here...  
 end
 
 # Local Variables:
