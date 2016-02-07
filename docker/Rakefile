@@ -107,6 +107,9 @@ namespace :docker do
 end
 
 namespace :ldap do
+  desc 'setup example'
+  task :setup => [ :build, :'docker:acl' ]
+
   desc 'dump example dit'
   task :dump do
     ldap_open{|ldap|
