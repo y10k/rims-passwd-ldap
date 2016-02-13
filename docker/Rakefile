@@ -326,6 +326,26 @@ olcAccess: {5}
     by * read
 EOF
   end
+
+  desc 'enable slapd verbose logging'
+  task :logging_on do
+    docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: 8 32 64 128 256
+EOF
+  end
+
+  desc 'disable slapd verbose logging'
+  task :logging_off do
+    docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
+dn: cn=config
+changetype: modify
+replace: olcLogLevel
+olcLogLevel: 64 256
+EOF
+  end
 end
 
 # Local Variables:
