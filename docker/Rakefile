@@ -126,6 +126,24 @@ namespace :ldap do
     }
   end
 
+  desc 'anonymous'
+  task :anonymous do
+    ldap_anon{|ldap|
+      puts '* all'
+      pp ldap.search(base: 'dc=nodomain')
+      pp ldap.search(base: 'o=science,dc=nodomain')
+      pp ldap.search(base: 'ou=user,o=science,dc=nodomain')
+
+      phys_filter = Net::LDAP::Filter.eq('memberOf', 'cn=physics,ou=group,o=science,dc=nodomain')
+      math_filter = Net::LDAP::Filter.eq('memberOf', 'cn=mathematics,ou=group,o=science,dc=nodomain')
+
+      for f in [ phys_filter, math_filter ]
+        puts "* filter: #{f}"
+        pp ldap.search(base: 'o=science,dc=nodomain', attributes: %w[ dn ], filter: f)
+      end
+    }
+  end
+
   desc 'search dit'
   task :search do
     users = load_users
