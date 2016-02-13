@@ -9,7 +9,7 @@ include Test::Unit::Assertions
 DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
 
 IMAGE_REPOSITORY = 'toki/rims-slapd'
-IMAGE_TAG = 'v1.5'
+IMAGE_TAG = 'v1.6'
 
 NAME = ENV['NAME'] || 'rims-slapd'
 AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))

@@ -1,7 +1,7 @@
 dn: cn=config
 changetype: modify
 replace: olcLogLevel
-olcLogLevel: 8 32 64 128 256
+olcLogLevel: 64 256
 
 dn: cn=module{0},cn=config
 changetype: modify
