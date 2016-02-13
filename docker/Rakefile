@@ -98,40 +98,6 @@ namespace :docker do
     docker 'rm', NAME
   end
 
-  desc 'setup slapd ACL'
-  task :acl do
-    docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
-dn: olcDatabase={1}hdb,cn=config
-changetype: modify
-replace: olcAccess
-olcAccess: {0}
-  to dn.exact="cn=search,ou=support,o=science,dc=nodomain" attrs=userPassword,shadowLastChange
-    by anonymous auth
-    by dn="cn=admin,dc=nodomain" write
-    by * none
-olcAccess: {1}
-  to attrs=userPassword,shadowLastChange
-    by self write
-    by anonymous auth
-    by dn="cn=admin,dc=nodomain" write
-    by * none
-olcAccess: {2}
-  to dn.subtree="ou=user,o=science,dc=nodomain" filter=(|(objectClass=organizationalUnit)(objectClass=inetOrgPerson))
-    by dn.exact="cn=search,ou=support,o=science,dc=nodomain" read
-olcAccess: {3}
-  to *
-    by dn.exact="cn=search,ou=support,o=science,dc=nodomain" none
-olcAccess: {4}
-  to dn.base=""
-    by * read
-olcAccess: {5}
-  to *
-    by self write
-    by dn="cn=admin,dc=nodomain" write
-    by * read
-EOF
-  end
-
   desc 'show slapd configuration'
   task :conf do
     docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
@@ -145,7 +111,7 @@ end
 
 namespace :ldap do
   desc 'setup example'
-  task :setup => [ :build, :'docker:acl' ]
+  task :setup => [ :build, :'conf:acl' ]
 
   desc 'dump example dit'
   task :dump do
@@ -323,6 +289,42 @@ namespace :ldap do
         assert_equal([], person[:userPassword])
       end
     }
+  end
+end
+
+namespace :conf do
+  desc 'setup slapd ACL'
+  task :acl do
+    docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+replace: olcAccess
+olcAccess: {0}
+  to dn.exact="cn=search,ou=support,o=science,dc=nodomain" attrs=userPassword,shadowLastChange
+    by anonymous auth
+    by dn="cn=admin,dc=nodomain" write
+    by * none
+olcAccess: {1}
+  to attrs=userPassword,shadowLastChange
+    by self write
+    by anonymous auth
+    by dn="cn=admin,dc=nodomain" write
+    by * none
+olcAccess: {2}
+  to dn.subtree="ou=user,o=science,dc=nodomain" filter=(|(objectClass=organizationalUnit)(objectClass=inetOrgPerson))
+    by dn.exact="cn=search,ou=support,o=science,dc=nodomain" read
+olcAccess: {3}
+  to *
+    by dn.exact="cn=search,ou=support,o=science,dc=nodomain" none
+olcAccess: {4}
+  to dn.base=""
+    by * read
+olcAccess: {5}
+  to *
+    by self write
+    by dn="cn=admin,dc=nodomain" write
+    by * read
+EOF
   end
 end
 
