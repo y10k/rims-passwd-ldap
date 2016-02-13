@@ -192,6 +192,10 @@ module RIMS::Password::LDAPSource::Test
         }
       }
     end
+  end
+
+  class LDAPSourceTest < Test::Unit::TestCase
+    include LDAPSourceTestMethod
 
     def test_wrong_search_bind
       auth = {
@@ -232,8 +236,51 @@ module RIMS::Password::LDAPSource::Test
     end
   end
 
-  class LDAPSourceTest < Test::Unit::TestCase
+  class LDAPSourceSearchBindVerificationSkipTest < Test::Unit::TestCase
     include LDAPSourceTestMethod
+
+    def setup
+      super
+      @search_bind_verification_skip = true
+    end
+
+    def test_wrong_search_bind_no_error
+      auth = {
+        method: :simple,
+        username: 'no_dn',
+        password: ''
+      }
+      #assert_raise(RuntimeError) {
+        open_ldap_src("ldap://localhost:#{@port}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+          ldap_src.user? 'foo'    # to bind
+          #flunk
+        }
+      #}
+
+      auth = {
+        method: :simple,
+        username: 'cn=no_role,ou=support,o=science,dc=nodomain',
+        password: 'open_sesame'
+      }
+      #assert_raise(RuntimeError) {
+        open_ldap_src("ldap://localhost:#{@port}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+          ldap_src.user? 'foo'    # to bind
+          #flunk
+        }
+      #}
+
+      auth = {
+        method: :simple,
+        username: "cn=#{@search['cn']},ou=support,o=science,dc=nodomain",
+        password: 'invalid_pass'
+      }
+      #assert_raise(RuntimeError) {
+        open_ldap_src("ldap://localhost:#{@port}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+          ldap_src.user? 'foo'    # to bind
+          #flunk
+        }
+      #}
+    end
   end
 end
 
