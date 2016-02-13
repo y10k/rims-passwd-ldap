@@ -111,7 +111,7 @@ end
 
 namespace :ldap do
   desc 'setup example'
-  task :setup => [ :build, :'conf:acl' ]
+  task :setup => [ :'conf:index', :build, :'conf:acl' ]
 
   desc 'dump example dit'
   task :dump do
@@ -344,6 +344,17 @@ dn: cn=config
 changetype: modify
 replace: olcLogLevel
 olcLogLevel: 64 256
+EOF
+  end
+
+  desc 'add index'
+  task :index do
+    docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
+dn: olcDatabase={1}hdb,cn=config
+changetype: modify
+add: olcDbIndex
+olcDbIndex: uid eq
+olcDbIndex: memberOf eq
 EOF
   end
 end
