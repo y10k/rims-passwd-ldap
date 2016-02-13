@@ -9,7 +9,7 @@ require 'uri'
 require 'yaml'
 
 module RIMS::Password::LDAPSource::Test
-  class LDAPSourceTest < Test::Unit::TestCase
+  module LDAPSourceTestMethod
     def setup
       @logger = Logger.new(STDOUT)
       @logger.level = ($DEBUG) ? Logger::DEBUG : Logger::FATAL
@@ -25,6 +25,8 @@ module RIMS::Password::LDAPSource::Test
         username: "cn=#{@search['cn']},ou=support,o=science,dc=nodomain",
         password: @search['userPassword']
       }
+
+      @search_bind_verification_skip = false
     end
 
     def open_ldap_src(ldap_uri, search_bind_auth: @search_bind_auth)
@@ -39,6 +41,7 @@ module RIMS::Password::LDAPSource::Test
       optional[:scope] = ldap_uri.scope if ldap_uri.scope
       optional[:filter] = ldap_uri.filter if ldap_uri.filter
       optional[:search_bind_auth] = search_bind_auth if search_bind_auth
+      optional[:search_bind_verification_skip] = @search_bind_verification_skip
       case (ldap_uri.scheme)
       when 'ldap'
         # ok
@@ -227,6 +230,10 @@ module RIMS::Password::LDAPSource::Test
         }
       }
     end
+  end
+
+  class LDAPSourceTest < Test::Unit::TestCase
+    include LDAPSourceTestMethod
   end
 end
 
