@@ -147,6 +147,52 @@ class RIMS::Password::LDAPSource < RIMS::Password::Source
 
       ldap_params
     end
+
+    def build_from_conf(config)
+      unless (config.key? 'ldap_uri') then
+        raise 'required ldap_uri parameter at LDAP pass-source configuration.'
+      end
+      ldap_params = parse_uri(config['ldap_uri'])
+      ldap_args = []
+
+      for name in [ :host, :port ]
+        value = ldap_params.delete(name) or raise "internal error: #{name}"
+        ldap_args << value
+      end
+
+      for name in [ :base_dn, :attribute ]
+        value = ldap_params.delete(name)
+        if (config.key? name.to_s) then
+          value = config[name.to_s]
+        end
+        unless (value) then
+          raise "required #{name} parameter at LDAP pass-source configuration."
+        end
+        ldap_args << value
+      end
+
+      for name in [ :scope, :filter, :search_bind_verification_skip ]
+        if (config.key? name.to_s) then
+          ldap_params[name] = config[name.to_s]
+        end
+      end
+
+      if (config.key? 'search_bind_auth') then
+        case (config['search_bind_auth']['method'])
+        when 'anonymous'
+          auth = { method: :anonymous }
+        when 'simple'
+          auth = { method: :simple }
+          auth[:username] = config['search_bind_auth']['username'] or raise 'required serach bind username at LDAP pass-source configuration.'
+          auth[:password] = config['search_bind_auth']['password'] or raise 'required search bind password at LDAP pass-source configuration.'
+        else
+          raise "unknown or unsupported bind method type: #{config['search_bind_auth'].inspect}"
+        end
+        ldap_params[:search_bind_auth] = auth
+      end
+
+      self.new(*ldap_args, **ldap_params)
+    end
   end
 end
 

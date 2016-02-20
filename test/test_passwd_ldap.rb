@@ -287,6 +287,8 @@ module RIMS::Password::LDAPSource::Test
   end
 
   class LDAPSourceConfigTest < Test::Unit::TestCase
+    include LDAPExample
+
     def assert_decode_uri(expected_string, src_string)
       assert_equal(expected_string, RIMS::Password::LDAPSource.uri_decode(src_string))
     end
@@ -333,6 +335,268 @@ module RIMS::Password::LDAPSource::Test
                          scope: 'base',
                          filter: '(uid=einstein)'
                        }, 'ldaps://mydomain:6360/ou=user,o=science,dc=nodomain?uid?base?(uid=einstein)')
+    end
+
+    def build_from_conf(config)
+      ldap_src = RIMS::Password::LDAPSource.build_from_conf(config)
+
+      logger = Logger.new(STDOUT)
+      logger.level = ($DEBUG) ? Logger::DEBUG : Logger::FATAL
+      ldap_src.logger = logger
+
+      ldap_src.start
+      begin
+        yield(ldap_src)
+      ensure
+        ldap_src.stop
+      end
+    end
+    private :build_from_conf
+
+    def test_build_from_conf
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+        for user in USERS['user'].find_all{|user| user['group'] != 'physics' }
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_ldap_uri
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?one?(memberOf=cn=physics,ou=group,o=science,dc=nodomain)",
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+        for user in USERS['user'].find_all{|user| user['group'] != 'physics' }
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_error_no_ldap_uri
+      c = {
+        #'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      assert_raise(RuntimeError) {
+        build_from_conf(c) {|ldap_src|
+          flunk
+        }
+      }
+    end
+
+    def test_build_from_conf_error_no_base_dn
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        #'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      assert_raise(RuntimeError) {
+        build_from_conf(c) {|ldap_src|
+          flunk
+        }
+      }
+    end
+
+    def test_build_from_conf_error_no_attribute
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        #'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      assert_raise(RuntimeError) {
+        build_from_conf(c) {|ldap_src|
+          flunk
+        }
+      }
+    end
+
+    def test_build_from_conf_scope_default
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        #'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+        for user in USERS['user'].find_all{|user| user['group'] != 'physics' }
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_no_filter
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        #'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user']
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_search_bind_verification_skip_default
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        #'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+        for user in USERS['user'].find_all{|user| user['group'] != 'physics' }
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_search_bind_verification_skip_enabled
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => {
+          'method' => 'simple',
+          'username' => SEARCH_USER,
+          'password' => SEARCH_PASS
+        },
+        'search_bind_verification_skip' => true
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
+          assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+        for user in USERS['user'].find_all{|user| user['group'] != 'physics' }
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_search_bind_auth_default_anonymous
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user']
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
+    end
+
+    def test_build_from_conf_search_bind_auth_explicit_anonymous
+      c = {
+        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'base_dn' => 'ou=user,o=science,dc=nodomain',
+        'attribute' => 'uid',
+        'scope' => 'one',
+        'filter' => '(memberOf=cn=physics,ou=group,o=science,dc=nodomain)',
+        'search_bind_auth' => { 'method' => 'anonymous' },
+        'search_bind_verification_skip' => false
+      }
+      build_from_conf(c) {|ldap_src|
+        for user in USERS['user']
+          assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
+          assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
+        end
+      }
     end
   end
 end
