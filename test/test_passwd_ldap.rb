@@ -299,6 +299,41 @@ module RIMS::Password::LDAPSource::Test
                         '(%26(cn=Albert%20Einstein)(memberOf=cn=physics%2cou=group%2co=science%2cdc=nodomain))')
       assert_decode_uri('+', '+')
     end
+
+    def assert_parse_uri(expected_ldap_params, ldap_uri)
+      assert_equal(expected_ldap_params, RIMS::Password::LDAPSource.parse_uri(ldap_uri))
+    end
+    private :assert_parse_uri
+
+    def test_parse_uri
+      assert_parse_uri({ host: 'localhost', port: 389 }, 'ldap:///')
+      assert_parse_uri({ host: 'localhost', port: 636, encryption: true }, 'ldaps://')
+      assert_parse_uri({ host: 'mydomain', port: 389 }, 'ldap://mydomain')
+      assert_parse_uri({ host: 'mydomain', port: 38900 }, 'ldap://mydomain:38900')
+      assert_parse_uri({ host: 'mydomain',
+                         port: 389,
+                         base_dn: 'ou=user,o=science,dc=nodomain'
+                       }, 'ldap://mydomain/ou=user,o=science,dc=nodomain')
+      assert_parse_uri({ host: 'mydomain',
+                         port: 389,
+                         base_dn: 'ou=user, o=science, dc=nodomain'
+                       }, 'ldap://mydomain/ou=user,%20o=science,%20dc=nodomain')
+      assert_parse_uri({ host: 'mydomain', port: 389, attribute: 'uid' }, 'ldap://mydomain/?uid')
+      assert_parse_uri({ host: 'mydomain', port: 389, attribute: '?foo' }, 'ldap://mydomain/?%3ffoo')
+      assert_parse_uri({ host: 'mydomain', port: 389, scope: 'base' }, 'ldap://mydomain/??base')
+      assert_parse_uri({ host: 'mydomain', port: 389, scope: 'one' }, 'ldap://mydomain/??one')
+      assert_parse_uri({ host: 'mydomain', port: 389, scope: 'sub' }, 'ldap://mydomain/??sub')
+      assert_parse_uri({ host: 'mydomain', port: 389, filter: '(uid=einstein)' }, 'ldap://mydomain/???(uid=einstein)')
+      assert_parse_uri({ host: 'mydomain', port: 389, filter: '(cn=Albert Einstein)' }, 'ldap://mydomain/???(cn=Albert%20Einstein)')
+      assert_parse_uri({ host: 'mydomain',
+                         port: 6360,
+                         encryption: true,
+                         base_dn: 'ou=user,o=science,dc=nodomain',
+                         attribute: 'uid',
+                         scope: 'base',
+                         filter: '(uid=einstein)'
+                       }, 'ldaps://mydomain:6360/ou=user,o=science,dc=nodomain?uid?base?(uid=einstein)')
+    end
   end
 end
 

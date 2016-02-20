@@ -3,6 +3,7 @@
 require 'net/ldap'
 require 'rims'
 require 'rims/passwd/ldap/version'
+require 'uri'
 
 class RIMS::Password::LDAPSource < RIMS::Password::Source
   def initialize(host, port, base_dn, attr, scope: 'sub', filter: nil,
@@ -122,6 +123,29 @@ class RIMS::Password::LDAPSource < RIMS::Password::Source
   class << self
     def uri_decode(string)
       string.gsub(/%(\h)(\h)/) { [$&[1, 2].hex].pack('C') }.force_encoding(string.encoding)
+    end
+
+    def parse_uri(uri_string)
+      ldap_params = {}
+
+      ldap_uri = URI.parse(uri_string)
+      case (ldap_uri)
+      when URI::LDAPS
+        ldap_params[:encryption] = true
+      when URI::LDAP
+        # OK
+      else
+        raise "not a LDAP URI: #{uri_string}"
+      end
+
+      ldap_params[:host] = ldap_uri.host || 'localhost'
+      ldap_params[:port] = ldap_uri.port or raise "required LDAP port: #{uri_string}"
+      ldap_params[:base_dn] = uri_decode(ldap_uri.dn) if (ldap_uri.dn && ! ldap_uri.dn.empty?)
+      ldap_params[:attribute] = uri_decode(ldap_uri.attributes) if ldap_uri.attributes
+      ldap_params[:scope] = uri_decode(ldap_uri.scope) if ldap_uri.scope
+      ldap_params[:filter] = uri_decode(ldap_uri.filter) if ldap_uri.filter
+
+      ldap_params
     end
   end
 end
