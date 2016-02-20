@@ -285,6 +285,21 @@ module RIMS::Password::LDAPSource::Test
       #}
     end
   end
+
+  class LDAPSourceConfigTest < Test::Unit::TestCase
+    def assert_decode_uri(expected_string, src_string)
+      assert_equal(expected_string, RIMS::Password::LDAPSource.uri_decode(src_string))
+    end
+    private :assert_decode_uri
+
+    def test_uri_decode
+      assert_decode_uri('ou=user,o=science,dc=nodomain', 'ou=user,o=science,dc=nodomain')
+      assert_decode_uri('(cn=Albert Einstein)', '(cn=Albert%20Einstein)')
+      assert_decode_uri('(&(cn=Albert Einstein)(memberOf=cn=physics,ou=group,o=science,dc=nodomain))',
+                        '(%26(cn=Albert%20Einstein)(memberOf=cn=physics%2cou=group%2co=science%2cdc=nodomain))')
+      assert_decode_uri('+', '+')
+    end
+  end
 end
 
 # Local Variables:

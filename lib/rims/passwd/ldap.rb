@@ -118,6 +118,12 @@ class RIMS::Password::LDAPSource < RIMS::Password::Source
       end
     }
   end
+
+  class << self
+    def uri_decode(string)
+      string.gsub(/%(\h)(\h)/) { [$&[1, 2].hex].pack('C') }.force_encoding(string.encoding)
+    end
+  end
 end
 
 # Local Variables:
