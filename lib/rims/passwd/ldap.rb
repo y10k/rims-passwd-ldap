@@ -194,6 +194,8 @@ class RIMS::Password::LDAPSource < RIMS::Password::Source
       self.new(*ldap_args, **ldap_params)
     end
   end
+
+  RIMS::Authentication.add_plug_in('ldap', self)
 end
 
 # Local Variables:
