@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
+require 'yaml'
+
 DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
 
 IMAGE_REPOSITORY = 'toki/rims-slapd'
 IMAGE_TAG = 'v1.4'
 
 NAME = ENV['NAME'] || 'rims-slapd'
-PORT = 38900
+AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
 
 def docker(*args)
   sh DOCKER_CMD, *args
@@ -24,7 +26,7 @@ end
 
 desc 'run new container'
 task :run do
-  docker 'run', "--name=#{NAME}", '-itd', '-p', "#{PORT}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+  docker 'run', "--name=#{NAME}", '-itd', '-p', "#{AUTH['port']}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
 end
 
 desc 'start container'
