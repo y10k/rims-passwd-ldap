@@ -23,6 +23,29 @@ file 'README.html' do
 end
 CLOBBER.include 'README.html'
 
+namespace :docker do
+  desc 'setup docker container for unit-test.'
+  task :setup do
+    chdir('docker') do
+      sh 'rake', 'setup'
+    end
+  end
+
+  desc 'reset docker container for unit-test.'
+  task :reset do
+    chdir('docker') do
+      sh 'rake', 'reset'
+    end
+  end
+
+  desc 'start docker container for unit-test.'
+  task :start do
+    chdir('docker') do
+      sh 'rake', 'docker:start'
+    end
+  end
+end
+
 # Local Variables:
 # mode: Ruby
 # indent-tabs-mode: nil
