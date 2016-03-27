@@ -5,6 +5,13 @@ require 'rims'
 require 'rims/passwd/ldap/version'
 require 'uri'
 
+# to enable LDAP pass-source plug-in, add the entry of
+# <tt>rims/passwd/ldap</tt> to <tt>load_libraries</tt> list.
+#
+#  ex.
+#     load_libraries:
+#       - rims/passwd/ldap
+#
 class RIMS::Password::LDAPSource < RIMS::Password::Source
   def initialize(host, port, base_dn, attr, scope: 'sub', filter: nil,
                  search_bind_auth: { :method => :anonymous },
@@ -148,6 +155,18 @@ class RIMS::Password::LDAPSource < RIMS::Password::Source
       ldap_params
     end
 
+    # configuration entries:
+    # * <tt>"ldap_uri"</tt>
+    # * <tt>"base_dn"</tt>
+    # * <tt>"attribute"</tt>
+    # * <tt>"scope"</tt>
+    # * <tt>"filter"</tt>
+    # * <tt>"search_bind_auth"</tt>
+    #     * <tt>"method"</tt>
+    #     * <tt>"username"</tt>
+    #     * <tt>"password"</tt>
+    # * <tt>"search_bind_verification_skip"</tt>
+    #
     def build_from_conf(config)
       unless (config.key? 'ldap_uri') then
         raise 'required ldap_uri parameter at LDAP pass-source configuration.'

@@ -1,26 +1,35 @@
-# Rims::Passwd::Ldap
+# RIMS::Password::LDAPSource
 
-TODO: Write a gem description
+RIMS password source plug-in for LDAP authentication.
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add this line to your application's Gemfile that includes RIMS:
 
-```ruby
-gem 'rims-passwd-ldap'
-```
+    gem 'rims', git: 'git://github.com/y10k/rims-passwd-ldap.git'
 
 And then execute:
 
     $ bundle
 
-Or install it yourself as:
-
-    $ gem install rims-passwd-ldap
-
 ## Usage
 
-TODO: Write usage instructions here
+Add these lines to your config.yml of RIMS:
+
+    load_libraries:
+      - rims/passwd/ldap
+    authentication:
+      - plug_in: ldap
+        configuration:
+          ldap_uri: ldap://localhost:38900          # hostname and port, `ldaps' for tls (not tested)
+          base_dn: ou=user,o=science,dc=nodomain    # base distingished name to search a user
+          attribute: uid                            # username's attribute
+          scope: sub                                # search scope from base dn. `base', `one`, or `sub'
+          filter: (memberOf=cn=physics,ou=group,o=science,dc=nodomain) # search filter
+          search_bind_auth:
+            method: simple
+            username: cn=search,ou=support,o=science,dc=nodomain       # username to search a user
+            password: ********                                         # password to search a user
 
 ## Contributing
 
