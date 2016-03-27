@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["toki@freedom.ne.jp"]
   spec.summary       = %q{RIMS password source plug-in for LDAP authentication.}
   spec.description   = %q{RIMS password source plug-in for LDAP authentication.}
-  spec.homepage      = ""
+  spec.homepage      = "https://github.com/y10k/rims-passwd-ldap"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
