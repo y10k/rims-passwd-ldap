@@ -6,10 +6,10 @@ require 'yaml'
 
 include Test::Unit::Assertions
 
-DOCKER_CMD = ENV['DOCKER'] || 'docker.io'
+DOCKER_CMD = ENV['DOCKER'] || 'docker'
 
 IMAGE_REPOSITORY = 'toki/rims-slapd'
-IMAGE_TAG = 'v1.6'
+IMAGE_TAG = 'v2.0'
 
 NAME = ENV['NAME'] || 'rims-slapd'
 AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
