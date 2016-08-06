@@ -303,7 +303,7 @@ namespace :conf do
   desc 'setup slapd ACL'
   task :acl do
     docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
-dn: olcDatabase={1}hdb,cn=config
+dn: olcDatabase={1}mdb,cn=config
 changetype: modify
 replace: olcAccess
 olcAccess: {0}
@@ -357,7 +357,7 @@ EOF
   desc 'add index'
   task :index do
     docker_exec_i 'ldapmodify', '-Y', 'EXTERNAL', '-H', 'ldapi:///', <<EOF
-dn: olcDatabase={1}hdb,cn=config
+dn: olcDatabase={1}mdb,cn=config
 changetype: modify
 add: olcDbIndex
 olcDbIndex: uid eq

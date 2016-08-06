@@ -8,7 +8,7 @@ changetype: modify
 add: olcModuleLoad
 olcModuleLoad: memberof
 
-dn: olcOverlay=memberof,olcDatabase={1}hdb,cn=config
+dn: olcOverlay=memberof,olcDatabase={1}mdb,cn=config
 changetype: add
 objectClass: olcMemberOf
 objectClass: olcOverlayConfig
