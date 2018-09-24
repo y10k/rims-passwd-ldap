@@ -11,6 +11,7 @@ require 'yaml'
 module RIMS::Password::LDAPSource::Test
   module LDAPExample
     AUTH = YAML.load_file(File.join(File.dirname(__FILE__), '..', 'docker', 'build', 'auth.yml'))
+    HOST = (ENV.key? 'DOCKER_HOST') ? URI(ENV['DOCKER_HOST']).host : 'localhost'
     PORT = AUTH['port']
     USERS = YAML.load_file(File.join(File.dirname(__FILE__), '..', 'docker', 'users.yml'))
     SEARCH = USERS['support'].find{|role| role['cn'] == 'search' }
@@ -67,13 +68,13 @@ module RIMS::Password::LDAPSource::Test
     private :open_ldap_src
 
     def test_raw_password?
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
         assert_false(ldap_src.raw_password?)
       }
     end
 
     def test_users
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
         for user in USERS['user']
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -82,7 +83,7 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_wrong_password
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid") {|ldap_src|
         for user in USERS['user']
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_false(ldap_src.compare_password(user['uid'], 'invalid_pass'), "uid: #{user.inspect}")
@@ -91,14 +92,14 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_wrong_base_dn
-      open_ldap_src("ldap://localhost:#{PORT}/o=science,dc=nodomain?uid") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/o=science,dc=nodomain?uid") {|ldap_src|
         for user in USERS['user']
           assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
         end
       }
 
-      open_ldap_src("ldap://localhost:#{PORT}/o=no_org,dc=nodomain?uid") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/o=no_org,dc=nodomain?uid") {|ldap_src|
         for user in USERS['user']
           assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -107,7 +108,7 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_scope_base
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?base") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid?base") {|ldap_src|
         for user in USERS['user']
           assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -115,7 +116,7 @@ module RIMS::Password::LDAPSource::Test
       }
 
       for user in USERS['user']
-        open_ldap_src("ldap://localhost:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?base") {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?base") {|ldap_src|
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
         }
@@ -123,7 +124,7 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_scope_one
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?one") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid?one") {|ldap_src|
         for user in USERS['user']
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -131,7 +132,7 @@ module RIMS::Password::LDAPSource::Test
       }
 
       for user in USERS['user']
-        open_ldap_src("ldap://localhost:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?one") {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?one") {|ldap_src|
           assert_false((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_nil(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
         }
@@ -139,7 +140,7 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_scope_sub
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?sub") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid?sub") {|ldap_src|
         for user in USERS['user']
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -147,7 +148,7 @@ module RIMS::Password::LDAPSource::Test
       }
 
       for user in USERS['user']
-        open_ldap_src("ldap://localhost:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?sub") {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/uid=#{user['uid']},ou=user,o=science,dc=nodomain?uid?sub") {|ldap_src|
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
         }
@@ -156,14 +157,14 @@ module RIMS::Password::LDAPSource::Test
 
     def test_users_scope_invalid_error
       assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?unknown") {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid?unknown") {|ldap_src|
           flunk
         }
       }
     end
 
     def test_users_filter_physics
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid??(memberOf=cn=physics,ou=group,o=science,dc=nodomain)") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid??(memberOf=cn=physics,ou=group,o=science,dc=nodomain)") {|ldap_src|
         for user in USERS['user'].find_all{|user| user['group'] == 'physics' }
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -176,7 +177,7 @@ module RIMS::Password::LDAPSource::Test
     end
 
     def test_users_filter_mathematics
-      open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid??(memberOf=cn=mathmatics,ou=group,o=science,dc=nodomain)") {|ldap_src|
+      open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid??(memberOf=cn=mathmatics,ou=group,o=science,dc=nodomain)") {|ldap_src|
         for user in USERS['user'].find_all{|user| user['group'] == 'mathmatics' }
           assert_true((ldap_src.user? user['uid']), "uid: #{user.inspect}")
           assert_true(ldap_src.compare_password(user['uid'], user['userPassword']), "uid: #{user.inspect}")
@@ -190,7 +191,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_users_filter_invalid
       assert_raise(Net::LDAP::FilterSyntaxInvalidError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid??unknown") {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid??unknown") {|ldap_src|
           flunk
         }
       }
@@ -207,7 +208,7 @@ module RIMS::Password::LDAPSource::Test
         password: ''
       }
       assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           flunk
         }
@@ -219,7 +220,7 @@ module RIMS::Password::LDAPSource::Test
         password: 'open_sesame'
       }
       assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           flunk
         }
@@ -231,7 +232,7 @@ module RIMS::Password::LDAPSource::Test
         password: 'invalid_pass'
       }
       assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           flunk
         }
@@ -254,7 +255,7 @@ module RIMS::Password::LDAPSource::Test
         password: ''
       }
       #assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           #flunk
         }
@@ -266,7 +267,7 @@ module RIMS::Password::LDAPSource::Test
         password: 'open_sesame'
       }
       #assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           #flunk
         }
@@ -278,7 +279,7 @@ module RIMS::Password::LDAPSource::Test
         password: 'invalid_pass'
       }
       #assert_raise(RuntimeError) {
-        open_ldap_src("ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
+        open_ldap_src("ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid", search_bind_auth: auth) {|ldap_src|
           ldap_src.user? 'foo'    # to bind
           #flunk
         }
@@ -355,7 +356,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -381,7 +382,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_ldap_uri
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}/ou=user,o=science,dc=nodomain?uid?one?(memberOf=cn=physics,ou=group,o=science,dc=nodomain)",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}/ou=user,o=science,dc=nodomain?uid?one?(memberOf=cn=physics,ou=group,o=science,dc=nodomain)",
         'search_bind_auth' => {
           'method' => 'simple',
           'username' => SEARCH_USER,
@@ -403,7 +404,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_error_no_ldap_uri
       c = {
-        #'ldap_uri' => "ldap://localhost:#{PORT}",
+        #'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -424,7 +425,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_error_no_base_dn
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         #'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -445,7 +446,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_error_no_attribute
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         #'attribute' => 'uid',
         'scope' => 'one',
@@ -466,7 +467,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_scope_default
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         #'scope' => 'one',
@@ -492,7 +493,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_no_filter
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -514,7 +515,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_search_bind_verification_skip_default
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -540,7 +541,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_search_bind_verification_skip_enabled
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -566,7 +567,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_search_bind_auth_default_anonymous
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
@@ -583,7 +584,7 @@ module RIMS::Password::LDAPSource::Test
 
     def test_build_from_conf_search_bind_auth_explicit_anonymous
       c = {
-        'ldap_uri' => "ldap://localhost:#{PORT}",
+        'ldap_uri' => "ldap://#{HOST}:#{PORT}",
         'base_dn' => 'ou=user,o=science,dc=nodomain',
         'attribute' => 'uid',
         'scope' => 'one',
