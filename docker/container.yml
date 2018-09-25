@@ -1,0 +1,4 @@
+name: rims-slapd
+repository: toki/rims-slapd
+tag: v2.0
+expose: 389

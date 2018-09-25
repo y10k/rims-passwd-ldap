@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+require 'json'
 require 'pp'
 require 'test/unit/assertions'
 require 'uri'
@@ -9,14 +10,20 @@ include Test::Unit::Assertions
 
 DOCKER_CMD = ENV['DOCKER'] || 'docker'
 
-NAME = 'rims-slapd'
 AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
+CONTAINER = YAML.load_file(File.join(File.dirname(__FILE__), 'container.yml'))
 
-IMAGE_REPOSITORY = 'toki/rims-slapd'
-IMAGE_TAG = 'v2.0'
+NAME = CONTAINER['name']
+IMAGE_REPOSITORY = CONTAINER['repository']
+IMAGE_TAG = CONTAINER['tag']
+EXPOSE = CONTAINER['expose']
 
 def docker(*args)
   sh DOCKER_CMD, *args
+end
+
+def get_port
+  Integer(JSON.parse(`docker inspect #{NAME}`)[0]['NetworkSettings']['Ports']["#{EXPOSE}/tcp"][0]['HostPort'])
 end
 
 def docker_exec_i(*cmd, input_string)
@@ -34,7 +41,7 @@ end
 def ldap_anon
   require 'net/ldap'            # on-demand load
   ldap_host = (ENV.key? 'DOCKER_HOST') ? URI(ENV['DOCKER_HOST']).host : 'localhost'
-  Net::LDAP.open(host: ldap_host, port: AUTH['port']) {|ldap|
+  Net::LDAP.open(host: ldap_host, port: get_port) {|ldap|
     yield(ldap)
   }
 end
@@ -54,7 +61,6 @@ def ldap_error(ldap)
   raise 'ldap fail.'
 end
 
-
 desc 'total setup'
 task :setup => [ :'docker:setup', :wait, :'ldap:setup' ]
 
@@ -68,6 +74,10 @@ task :wait do
 end
 
 namespace :docker do
+  task :get_port do
+    p get_port
+  end
+
   desc 'all setup'
   task :setup => [ :build, :run ]
 
@@ -89,7 +99,7 @@ namespace :docker do
 
   desc 'run new container'
   task :run do
-    docker 'run', "--name=#{NAME}", '-itd', '-p', "#{AUTH['port']}:389", "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+    docker 'run', "--name=#{NAME}", '-itd', '--expose', EXPOSE.to_s, '-P', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
   end
 
   desc 'start container'
