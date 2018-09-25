@@ -9,11 +9,11 @@ include Test::Unit::Assertions
 
 DOCKER_CMD = ENV['DOCKER'] || 'docker'
 
+NAME = 'rims-slapd'
+AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
+
 IMAGE_REPOSITORY = 'toki/rims-slapd'
 IMAGE_TAG = 'v2.0'
-
-NAME = ENV['CONTAINER'] || 'rims-slapd'
-AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
 
 def docker(*args)
   sh DOCKER_CMD, *args
