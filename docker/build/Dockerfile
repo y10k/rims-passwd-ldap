@@ -1,6 +1,6 @@
 # local OpenLDAP for rims-passwd-ldap
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 MAINTAINER TOKI Yoshinori
 
 ADD auth.yml auth.yml
