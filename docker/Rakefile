@@ -16,10 +16,19 @@ CONTAINER = YAML.load_file(File.join(File.dirname(__FILE__), 'container.yml'))
 NAME = CONTAINER['name']
 IMAGE_REPOSITORY = CONTAINER['repository']
 IMAGE_TAG = CONTAINER['tag']
-EXPOSE = CONTAINER['expose']
 
-def get_port
-  Integer(JSON.parse(`docker inspect #{NAME}`)[0]['NetworkSettings']['Ports']["#{EXPOSE}/tcp"][0]['HostPort'])
+DOCKER_INSPECT_CACHE = {}
+
+def docker_inspect(name)
+  DOCKER_INSPECT_CACHE[name] ||= JSON.parse(`#{DOCKER} inspect #{name}`)
+end
+
+def get_exposed_port(name)
+  docker_inspect(name)[0]['Config']['ExposedPorts'].keys.first
+end
+
+def get_published_port(name)
+  Integer(docker_inspect(name)[0]['NetworkSettings']['Ports'][get_exposed_port(name)][0]['HostPort'])
 end
 
 def docker_exec_i(*cmd, input_string)
@@ -37,7 +46,7 @@ end
 def ldap_anon
   require 'net/ldap'            # on-demand load
   ldap_host = (ENV.key? 'DOCKER_HOST') ? URI(ENV['DOCKER_HOST']).host : 'localhost'
-  Net::LDAP.open(host: ldap_host, port: get_port) {|ldap|
+  Net::LDAP.open(host: ldap_host, port: get_published_port(NAME)) {|ldap|
     yield(ldap)
   }
 end
@@ -70,8 +79,12 @@ task :wait do
 end
 
 namespace :docker do
-  task :get_port do
-    p get_port
+  task :get_exposed_port do
+    p get_exposed_port(NAME)
+  end
+
+  task :get_published_port do
+    p get_published_port(NAME)
   end
 
   desc 'all setup'
@@ -95,7 +108,7 @@ namespace :docker do
 
   desc 'run new container'
   task :run do
-    sh "#{DOCKER} run --name=#{NAME} -itd --expose #{EXPOSE} -P #{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+    sh "#{DOCKER} run --name=#{NAME} -itd -P #{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
   end
 
   desc 'start container'

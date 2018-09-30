@@ -11,10 +11,14 @@ require 'yaml'
 
 module RIMS::Password::LDAPSource::Test
   module LDAPExample
+    DOCKER = ENV['DOCKER_COMMAND'] || 'docker'
     AUTH = YAML.load_file(File.join(File.dirname(__FILE__), '..', 'docker', 'build', 'auth.yml'))
     CONTAINER = YAML.load_file(File.join(File.dirname(__FILE__), '..', 'docker', 'container.yml'))
     HOST = (ENV.key? 'DOCKER_HOST') ? URI(ENV['DOCKER_HOST']).host : 'localhost'
-    PORT = Integer(JSON.parse(`docker inspect #{CONTAINER['name']}`)[0]['NetworkSettings']['Ports']["#{CONTAINER['expose']}/tcp"][0]['HostPort'])
+    conf = JSON.parse(`#{DOCKER} inspect #{CONTAINER['name']}`)
+    exposed_port = conf[0]['Config']['ExposedPorts'].keys.first
+    published_port = Integer(conf[0]['NetworkSettings']['Ports'][exposed_port][0]['HostPort'])
+    PORT = published_port
     USERS = YAML.load_file(File.join(File.dirname(__FILE__), '..', 'docker', 'users.yml'))
     SEARCH = USERS['support'].find{|role| role['cn'] == 'search' }
     SEARCH_USER = "cn=#{SEARCH['cn']},ou=support,o=science,dc=nodomain"

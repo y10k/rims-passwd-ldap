@@ -18,3 +18,4 @@ ADD modconf.ldif modconf.ldif
 RUN service slapd start && ldapmodify -Y EXTERNAL -H ldapi:/// -f modconf.ldif && service slapd stop
 
 CMD service rsyslog start && service slapd start && bash
+EXPOSE 389
