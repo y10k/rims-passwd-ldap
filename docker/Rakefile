@@ -18,10 +18,6 @@ IMAGE_REPOSITORY = CONTAINER['repository']
 IMAGE_TAG = CONTAINER['tag']
 EXPOSE = CONTAINER['expose']
 
-def docker(*args)
-  sh DOCKER, *args
-end
-
 def get_port
   Integer(JSON.parse(`docker inspect #{NAME}`)[0]['NetworkSettings']['Ports']["#{EXPOSE}/tcp"][0]['HostPort'])
 end
@@ -89,42 +85,42 @@ namespace :docker do
 
   desc 'build image'
   task :build do
-    docker 'build', '-t', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}", 'build'
+    sh "#{DOCKER} build -t #{IMAGE_REPOSITORY}:#{IMAGE_TAG} build"
   end
 
   desc 'remove image'
   task :rmi do
-    docker 'rmi', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+    sh "#{DOCKER} rmi #{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
   end
 
   desc 'run new container'
   task :run do
-    docker 'run', "--name=#{NAME}", '-itd', '--expose', EXPOSE.to_s, '-P', "#{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
+    sh "#{DOCKER} run --name=#{NAME} -itd --expose #{EXPOSE} -P #{IMAGE_REPOSITORY}:#{IMAGE_TAG}"
   end
 
   desc 'start container'
   task :start do
-    docker 'start', NAME
+    sh "#{DOCKER} start #{NAME}"
   end
 
   desc 'stop container'
   task :stop do
-    docker 'stop', NAME
+    sh "#{DOCKER} stop #{NAME}"
   end
 
   desc 'remove container'
   task :rm do
-    docker 'rm', NAME
+    sh "#{DOCKER} rm #{NAME}"
   end
 
   desc 'show slapd configuration'
   task :conf do
-    docker 'exec', NAME, 'slapcat', '-b', 'cn=config'
+    sh "#{DOCKER} exec #{NAME} slapcat -b cn=config"
   end
 
   desc 'tail slapd logging'
   task :tail do
-    docker 'exec',  NAME, 'tail', '-100f', '/var/log/syslog'
+    sh "#{DOCKER} exec #{NAME} tail -100f /var/log/syslog"
   end
 end
 
