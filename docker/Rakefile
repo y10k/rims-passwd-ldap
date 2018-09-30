@@ -8,7 +8,7 @@ require 'yaml'
 
 include Test::Unit::Assertions
 
-DOCKER_CMD = ENV['DOCKER'] || 'docker'
+DOCKER = ENV['DOCKER_COMMAND'] || 'docker'
 
 AUTH = YAML.load_file(File.join(File.dirname(__FILE__), 'build', 'auth.yml'))
 CONTAINER = YAML.load_file(File.join(File.dirname(__FILE__), 'container.yml'))
@@ -19,7 +19,7 @@ IMAGE_TAG = CONTAINER['tag']
 EXPOSE = CONTAINER['expose']
 
 def docker(*args)
-  sh DOCKER_CMD, *args
+  sh DOCKER, *args
 end
 
 def get_port
@@ -27,7 +27,7 @@ def get_port
 end
 
 def docker_exec_i(*cmd, input_string)
-  docker_cmd = [ DOCKER_CMD, 'exec', '-i', NAME ] + cmd
+  docker_cmd = [ DOCKER, 'exec', '-i', NAME ] + cmd
   IO.popen(docker_cmd, 'w') {|stdin| stdin << input_string }
   if ($?.exitstatus != 0) then
     raise "FAILED: #{docker_cmd.join(' ')} <\n" + input_string
