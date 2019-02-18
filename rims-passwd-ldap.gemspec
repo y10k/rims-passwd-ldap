@@ -9,8 +9,12 @@ Gem::Specification.new do |spec|
   spec.version       = RIMS::Password_LDAPSource_VERSION
   spec.authors       = ["TOKI Yoshinori"]
   spec.email         = ["toki@freedom.ne.jp"]
-  spec.summary       = %q{RIMS password source plug-in for LDAP authentication.}
-  spec.description   = %q{RIMS password source plug-in for LDAP authentication.}
+  spec.summary       = %q{RIMS password source plug-in for LDAP authentication}
+  spec.description   = <<-'EOF'
+    RIMS password source plug-in for LDAP authentication.
+    By introducing this plug-in, RIMS IMAP server will be able to
+    authenticate users with LDAP.
+  EOF
   spec.homepage      = "https://github.com/y10k/rims-passwd-ldap"
   spec.license       = "MIT"
 
