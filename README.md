@@ -8,7 +8,9 @@ Installation
 
 Add this line to your application's Gemfile that includes RIMS:
 
-    gem 'rims-passwd-ldap', git: 'git://github.com/y10k/rims-passwd-ldap.git'
+```ruby
+gem 'rims-passwd-ldap', git: 'git://github.com/y10k/rims-passwd-ldap.git'
+```
 
 And then execute:
 
@@ -19,20 +21,22 @@ Usage
 
 Add these lines to your config.yml of RIMS:
 
-    load_libraries:
-      - rims/passwd/ldap
-    authentication:
-      - plug_in: ldap
-        configuration:
-          ldap_uri: ldap://localhost:38900          # hostname and port, `ldaps' for tls (not tested)
-          base_dn: ou=user,o=science,dc=nodomain    # base distingished name to search a user
-          attribute: uid                            # attribute matched to username
-          scope: sub                                # search scope from base dn. `base', `one', or `sub'
-          filter: (memberOf=cn=physics,ou=group,o=science,dc=nodomain) # search filter
-          search_bind_auth:
-            method: simple
-            username: cn=search,ou=support,o=science,dc=nodomain       # username to search a user
-            password: ********                                         # password to search a user
+```yaml
+load_libraries:
+  - rims/passwd/ldap
+authentication:
+  - plug_in: ldap
+    configuration:
+      ldap_uri: ldap://localhost:38900          # hostname and port, `ldaps' for tls (not tested)
+      base_dn: ou=user,o=science,dc=nodomain    # base distingished name to search a user
+      attribute: uid                            # attribute matched to username
+      scope: sub                                # search scope from base dn. `base', `one', or `sub'
+      filter: (memberOf=cn=physics,ou=group,o=science,dc=nodomain) # search filter
+      search_bind_auth:
+        method: simple
+        username: cn=search,ou=support,o=science,dc=nodomain       # username to search a user
+        password: ********                                         # password to search a user
+```
 
 Contributing
 ------------
