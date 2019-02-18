@@ -1,8 +1,10 @@
-# RIMS::Password::LDAPSource
+RIMS::Password::LDAPSource
+==========================
 
 RIMS password source plug-in for LDAP authentication.
 
-## Installation
+Installation
+------------
 
 Add this line to your application's Gemfile that includes RIMS:
 
@@ -12,7 +14,8 @@ And then execute:
 
     $ bundle
 
-## Usage
+Usage
+-----
 
 Add these lines to your config.yml of RIMS:
 
@@ -31,7 +34,8 @@ Add these lines to your config.yml of RIMS:
             username: cn=search,ou=support,o=science,dc=nodomain       # username to search a user
             password: ********                                         # password to search a user
 
-## Contributing
+Contributing
+------------
 
 1. Fork it ( https://github.com/[my-github-username]/rims-passwd-ldap/fork )
 2. Create your feature branch (`git checkout -b my-new-feature`)
