@@ -2,6 +2,8 @@ RIMS::Password::LDAPSource
 ==========================
 
 RIMS password source plug-in for LDAP authentication.
+By introducing this plug-in, RIMS IMAP server will be able to
+authenticate users with LDAP.
 
 Installation
 ------------
