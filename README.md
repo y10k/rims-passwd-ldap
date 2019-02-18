@@ -11,12 +11,16 @@ Installation
 Add this line to your application's Gemfile that includes RIMS:
 
 ```ruby
-gem 'rims-passwd-ldap', git: 'git://github.com/y10k/rims-passwd-ldap.git'
+gem 'rims-passwd-ldap'
 ```
 
 And then execute:
 
     $ bundle
+
+Or install it yourself as:
+
+    $ gem install rims-passwd-ldap
 
 Usage
 -----
